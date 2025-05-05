@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 import aiohttp
 
-BOT_TOKEN = "7837513026:AAEI2rNN0KmT61kkqacWIEyw8P1D4yV16Vs"
+BOT_TOKEN = "7837513026:AAG-JTyAvqzdYGVslkG-BjbZrLHp5V5R6OE"
 
 ASK_NUMBER, ASK_LIMIT = range(2)
 user_data = {}
@@ -44,9 +44,9 @@ async def ask_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_data[update.effective_chat.id] = {"number": number}
     await update.message.reply_text("How many SMS to send?")
-    return ConversationHandler.END  # এটা বাদ দিয়ে নিচে limit পার্ট যোগ করা ভালো
+    return ASK_LIMIT + 1  # Move to limit input
 
-async def get_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def send_sms(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         limit = int(update.message.text.strip())
     except ValueError:
@@ -87,12 +87,10 @@ conv_handler = ConversationHandler(
     states={
         ASK_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_number)],
         ASK_LIMIT: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_limit)],
+        ASK_LIMIT + 1: [MessageHandler(filters.TEXT & ~filters.COMMAND, send_sms)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
-
-# এখন get_limit কে Conversation এর মধ্যে আনবো না, বরং সেটাই ASK_LIMIT
-# তাই আলাদা get_limit handler আর দরকার নেই
 
 app.add_handler(conv_handler)
 app.run_polling()
