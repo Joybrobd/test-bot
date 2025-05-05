@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 import aiohttp
 
-BOT_TOKEN = "7151398287:AAG1K29dmUNkhNSjdquTti2eU-KnydfkOvw"
+BOT_TOKEN = "7837513026:AAFxwAtdU5Mq3fdch5GDvONfX0uq2Wl01iA"
 
 ASK_NUMBER, ASK_LIMIT = range(2)
 user_data = {}
