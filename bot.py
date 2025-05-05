@@ -2,7 +2,7 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 import aiohttp
 
-BOT_TOKEN = "7509103652:AAHUuh-9BHne3R1mv3-wMuB2SHyzQvWceMM"
+BOT_TOKEN = "7396172859:AAFZfDs3xHqxOE-w0wS7lxqckSQAABuubCo"
 ASK_NUMBER, ASK_LIMIT = range(2)
 user_data = {}
 
